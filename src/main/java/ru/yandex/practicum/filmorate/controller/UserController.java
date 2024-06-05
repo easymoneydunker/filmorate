@@ -4,8 +4,8 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.DuplicatedException;
 import ru.yandex.practicum.filmorate.exception.IllegalInitializationException;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.validator.UserValidator;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -17,6 +17,7 @@ import java.util.Objects;
 @RequestMapping("/users")
 public class UserController {
     private final Map<Long, User> users = new HashMap<>();
+    private final UserValidator userValidator = new UserValidator();
 
     @GetMapping
     public Collection<User> getUsers() {
@@ -41,18 +42,18 @@ public class UserController {
 
     @PutMapping
     public User update(@RequestBody User newUser) {
-        validate(newUser);
+        userValidator.validate(newUser, users);
         User oldUser = users.get(newUser.getId());
-        if (newUser.getName() == null) {
+        if (Objects.isNull(newUser.getName())) {
             newUser.setName(oldUser.getName());
         }
-        if (newUser.getLogin() == null) {
+        if (Objects.isNull(newUser.getLogin())) {
             newUser.setLogin(oldUser.getLogin());
         }
-        if (newUser.getBirthday() == null) {
+        if (Objects.isNull(newUser.getBirthday())) {
             newUser.setBirthday(oldUser.getBirthday());
         }
-        if (newUser.getEmail() == null) {
+        if (Objects.isNull(newUser.getEmail())) {
             newUser.setEmail(oldUser.getEmail());
         }
         users.put(newUser.getId(), newUser);
@@ -62,17 +63,5 @@ public class UserController {
     private long getNextId() {
         long currentMaxId = users.keySet().stream().mapToLong(id -> id).max().orElse(0);
         return ++currentMaxId;
-    }
-
-    private void validate(User user) {
-        if (user.getId() == null) {
-            throw new IllegalInitializationException("User must have an id");
-        }
-        if (!users.containsKey(user.getId())) {
-            throw new NotFoundException("User not found");
-        }
-        if (users.values().stream().anyMatch(user1 -> user1.getEmail().equals(user.getEmail()) && !user1.equals(user))) {
-            throw new DuplicatedException("This email is already in use");
-        }
     }
 }
