@@ -1,4 +1,4 @@
 # java-filmorate
-Template repository for Filmorate project.
 
+This diagram shows the database structure
 ![Database Diagram](dbdiagram.png)
