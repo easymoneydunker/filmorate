@@ -1,67 +1,60 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.DuplicatedException;
-import ru.yandex.practicum.filmorate.exception.IllegalInitializationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.validator.UserValidator;
+import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.time.LocalDate;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    private final Map<Long, User> users = new HashMap<>();
-    private final UserValidator userValidator = new UserValidator();
+    private final UserService userService;
+
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping
-    public Collection<User> getUsers() {
-        return users.values();
+    public Collection<User> getAllUsers() {
+        return userService.getAllUsers();
+    }
+
+    @GetMapping("/{userId}")
+    public User getUserById(@PathVariable long id) {
+        return userService.getUserById(id);
+    }
+
+    @GetMapping("/{userId}/friends")
+    public Collection<User> getFriends(@PathVariable long userId) {
+        return userService.getUserFriendsByUserId(userId);
+    }
+
+    @GetMapping("{userId}/friends/common/{otherId}")
+    public Collection<User> getCommonFriends(@PathVariable long userId, @PathVariable long otherId) {
+        return userService.getCommonFriends(userId, otherId);
     }
 
     @PostMapping
-    public User create(@Valid @RequestBody User newUser) {
-        if (Objects.nonNull(newUser.getBirthday()) && newUser.getBirthday().isAfter(LocalDate.now())) {
-            throw new IllegalInitializationException("Illegal birthday date");
-        }
-        if (users.values().stream().anyMatch(user -> user.getEmail().equals(newUser.getEmail()) || user.getLogin().equals(newUser.getLogin()))) {
-            throw new DuplicatedException("This email and/or username have already been registered");
-        }
-        if (newUser.getName() == null) {
-            newUser.setName(newUser.getLogin());
-        }
-        newUser.setId(getNextId());
-        users.put(newUser.getId(), newUser);
-        return newUser;
+    public User create(@RequestBody User newUser) {
+        return userService.create(newUser);
     }
 
     @PutMapping
     public User update(@RequestBody User newUser) {
-        userValidator.validate(newUser, users);
-        User oldUser = users.get(newUser.getId());
-        if (Objects.isNull(newUser.getName())) {
-            newUser.setName(oldUser.getName());
-        }
-        if (Objects.isNull(newUser.getLogin())) {
-            newUser.setLogin(oldUser.getLogin());
-        }
-        if (Objects.isNull(newUser.getBirthday())) {
-            newUser.setBirthday(oldUser.getBirthday());
-        }
-        if (Objects.isNull(newUser.getEmail())) {
-            newUser.setEmail(oldUser.getEmail());
-        }
-        users.put(newUser.getId(), newUser);
-        return newUser;
+        return userService.update(newUser);
     }
 
-    private long getNextId() {
-        long currentMaxId = users.keySet().stream().mapToLong(id -> id).max().orElse(0);
-        return ++currentMaxId;
+    @PutMapping("/{userId}/friends/{friendId}")
+    public Map<String, Long> addFriend(@PathVariable long userId, @PathVariable long friendId) {
+        return userService.addFriend(userId, friendId);
+    }
+
+    @DeleteMapping("/{userId}/friends/{friendId}")
+    public Map<String, Long> removeFriend(@PathVariable long userId, @PathVariable long friendId) {
+        return userService.removeFriend(userId, friendId);
     }
 }
