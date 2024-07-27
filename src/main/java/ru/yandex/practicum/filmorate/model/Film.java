@@ -1,12 +1,11 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import ru.yandex.practicum.filmorate.validator.FilmReleaseDate;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -18,21 +17,24 @@ import java.util.Set;
 @AllArgsConstructor
 public class Film {
     private Long id;
-    @NotNull
     @NotBlank
     private String name;
-    @NotNull
-    @Size(min = 0, max = 100)
+    @Size(min = 10, max = 100)
     private String description;
+    @FilmReleaseDate
     private LocalDate releaseDate;
+    @Positive
+    @Min(1)
     private Integer duration;
-    private final Set<Long> likes = new HashSet<>();
+    @NotNull
+    private Mpa mpa;
+    private Set<Genre> genres = new HashSet<>();
 
-    public void addLikedUserId(long userId) {
-        likes.add(userId);
+    public void addGenre(Genre genre) {
+        genres.add(genre);
     }
 
-    public void removeLikedUserId(long userId) {
-        likes.remove(userId);
+    public void removeGenre(Genre genre) {
+        genres.remove(genre);
     }
 }

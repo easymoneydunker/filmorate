@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -34,12 +35,12 @@ public class FilmController {
     }
 
     @PostMapping
-    public Film create(@RequestBody Film newFilm) {
+    public Film create(@Valid @RequestBody Film newFilm) {
         return filmService.create(newFilm);
     }
 
     @PutMapping
-    public Film update(@RequestBody Film newFilm) {
+    public Film update(@Valid @RequestBody Film newFilm) {
         return filmService.update(newFilm);
     }
 
