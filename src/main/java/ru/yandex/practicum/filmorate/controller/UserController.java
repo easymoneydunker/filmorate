@@ -1,21 +1,28 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    private final UserService userService;
-
     @Autowired
-    public UserController(UserService userService) {
-        this.userService = userService;
+    private UserService userService;
+
+    @PostMapping
+    public User addUser(@Valid @RequestBody User user) {
+        return userService.addUser(user);
+    }
+
+    @PutMapping
+    public User updateUser(@Valid @RequestBody User user) {
+        return userService.updateUser(user);
     }
 
     @GetMapping
@@ -23,38 +30,30 @@ public class UserController {
         return userService.getAllUsers();
     }
 
-    @GetMapping("/{userId}")
+    @GetMapping("/{id}")
     public User getUserById(@PathVariable long id) {
         return userService.getUserById(id);
     }
 
-    @GetMapping("/{userId}/friends")
-    public Collection<User> getFriends(@PathVariable long userId) {
-        return userService.getUserFriendsByUserId(userId);
+    @PutMapping("/{id}/friends/{friendId}")
+    public ResponseEntity<Void> addFriend(@PathVariable long id, @PathVariable long friendId) {
+        userService.addFriend(id, friendId);
+        return ResponseEntity.ok().build();
     }
 
-    @GetMapping("{userId}/friends/common/{otherId}")
-    public Collection<User> getCommonFriends(@PathVariable long userId, @PathVariable long otherId) {
-        return userService.getCommonFriends(userId, otherId);
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public ResponseEntity<Void> removeFriend(@PathVariable long id, @PathVariable long friendId) {
+        userService.removeFriend(id, friendId);
+        return ResponseEntity.noContent().build();
     }
 
-    @PostMapping
-    public User create(@RequestBody User newUser) {
-        return userService.create(newUser);
+    @GetMapping("/{id}/friends")
+    public Collection<User> getUserFriends(@PathVariable long id) {
+        return userService.getUserFriends(id);
     }
 
-    @PutMapping
-    public User update(@RequestBody User newUser) {
-        return userService.update(newUser);
-    }
-
-    @PutMapping("/{userId}/friends/{friendId}")
-    public Map<String, Long> addFriend(@PathVariable long userId, @PathVariable long friendId) {
-        return userService.addFriend(userId, friendId);
-    }
-
-    @DeleteMapping("/{userId}/friends/{friendId}")
-    public Map<String, Long> removeFriend(@PathVariable long userId, @PathVariable long friendId) {
-        return userService.removeFriend(userId, friendId);
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public Collection<User> getCommonFriends(@PathVariable long id, @PathVariable long otherId) {
+        return userService.getCommonFriends(id, otherId);
     }
 }

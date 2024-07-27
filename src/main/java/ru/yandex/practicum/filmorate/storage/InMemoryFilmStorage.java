@@ -1,6 +1,8 @@
 package ru.yandex.practicum.filmorate.storage;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.DuplicatedException;
 import ru.yandex.practicum.filmorate.exception.IllegalInitializationException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
@@ -11,7 +13,6 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.util.*;
 
-@Component
 public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
     private final FilmValidator filmValidator = new FilmValidator();

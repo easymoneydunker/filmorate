@@ -1,100 +1,64 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.IllegalInitializationException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.UserDbStorage;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.util.Collection;
 
 @Service
 public class UserService {
-    private final UserStorage userStorage;
 
     @Autowired
-    public UserService(UserStorage userStorage) {
-        this.userStorage = userStorage;
+    @Qualifier("UserDbStorage")
+    private UserDbStorage userDbStorage;
+
+    public User addUser(User user) {
+        return userDbStorage.create(user);
     }
 
-    public User create(User user) {
-        return userStorage.create(user);
-    }
-
-    public User update(User user) {
-        return userStorage.update(user);
+    public User updateUser(User user) {
+        getUserById(user.getId());
+        return userDbStorage.update(user);
     }
 
     public Collection<User> getAllUsers() {
-        return userStorage.getAllUsers();
+        return userDbStorage.getAllUsers();
     }
 
     public User getUserById(long id) {
-        return userStorage.getUserById(id)
-                .orElseThrow(() -> new NotFoundException("No user with id = " + id));
+        return userDbStorage.getUserById(id).orElseThrow(() -> new NotFoundException("User not found"));
     }
 
-    public Collection<User> getUserFriendsByUserId(long id) {
-        User user = getUserById(id);
-
-        Collection<Long> friendIds = user.getFriends();
-        Collection<User> friends = new HashSet<>();
-
-        for (Long friendId : friendIds) {
-            friends.add(getUserById(friendId));
-        }
-
-        return friends;
+    public void addFriend(long userId, long friendId) {
+        userDbStorage.addFriend(userId, friendId);
     }
 
-    public Map<String, Long> addFriend(long user1Id, long user2Id) {
-        if (user1Id == user2Id) {
-            throw new IllegalArgumentException("A user cannot add themselves as a friend.");
-        }
-
-        User user1 = userStorage.getUserById(user1Id)
-                .orElseThrow(() -> new NotFoundException("No user with id = " + user1Id));
-        User user2 = userStorage.getUserById(user2Id)
-                .orElseThrow(() -> new NotFoundException("No user with id = " + user2Id));
-
-        if (!user1.getFriends().contains(user2Id)) {
-            user1.addFriend(user2Id);
-            userStorage.update(user1);
-        }
-
-        if (!user2.getFriends().contains(user1Id)) {
-            user2.addFriend(user1Id);
-            userStorage.update(user2);
-        }
-
-        return Map.of("id", user1Id, "friend_id", user2Id);
+    public void removeFriend(long userId, long friendId) {
+        userDbStorage.removeFriend(userId, friendId);
     }
 
-    public Map<String, Long> removeFriend(long user1Id, long user2Id) {
-        User user1 = userStorage.getUserById(user1Id)
-                .orElseThrow(() -> new NotFoundException("No user with id = " + user1Id));
-        User user2 = userStorage.getUserById(user2Id)
-                .orElseThrow(() -> new NotFoundException("No user with id = " + user2Id));
-
-        user1.removeFriend(user2Id);
-        user2.removeFriend(user1Id);
-
-        return Map.of("id", user1Id, "friend_id", user2Id);
+    public Collection<User> getUserFriends(long userId) {
+        getUserById(userId);
+        return userDbStorage.getUserFriendsByUserId(userId);
     }
 
-    public Collection<User> getCommonFriends(long user1Id, long user2Id) {
-        User user1 = userStorage.getUserById(user1Id)
-                .orElseThrow(() -> new NotFoundException("No user with id = " + user1Id));
-        User user2 = userStorage.getUserById(user2Id)
-                .orElseThrow(() -> new NotFoundException("No user with id = " + user2Id));
+    public Collection<User> getCommonFriends(long userId, long friendId) {
+        return userDbStorage.getCommonFriends(userId, friendId);
+    }
 
-        Set<Long> user1FriendIds = new HashSet<>(user1.getFriends());
-        Set<Long> user2FriendIds = new HashSet<>(user2.getFriends());
+    private void validateUser(User user) {
+        if (user.getLogin().contains(" ")) {
+            throw new IllegalInitializationException("Illegal login");
+        }
+        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
+            throw new IllegalInitializationException("Illegal birthday");
+        }
 
-        user1FriendIds.retainAll(user2FriendIds);
-
-        return user1FriendIds.stream().map(id -> userStorage.getUserById(id)
-                .orElseThrow(() -> new NotFoundException("No user with id = " + id))).collect(Collectors.toSet());
     }
 }

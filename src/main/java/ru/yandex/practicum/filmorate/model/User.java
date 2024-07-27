@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.model;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,14 +19,16 @@ import java.util.Set;
 @AllArgsConstructor
 public class User {
     private Long id;
-    @Email
-    @NotNull
+    @Email(message = "Email should be valid")
+    @NotNull(message = "Email cannot be null")
     private String email;
-    @NotNull
-    @NotBlank
+    @NotNull(message = "Login cannot be null")
+    @NotBlank(message = "Login cannot be blank")
     private String login;
     private String name;
+    @PastOrPresent(message = "Birthday must be in the past or present")
     private LocalDate birthday;
+
     private final Set<Long> friends = new HashSet<>();
     private final Set<Long> likedFilms = new HashSet<>();
 
